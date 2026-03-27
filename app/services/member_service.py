@@ -1,8 +1,8 @@
 # backend/app/services/member_service.py
 import math
 from datetime import datetime, date
-from bson import ObjectId
-from bson.errors import InvalidId
+# from bson import ObjectId
+# from bson.errors import InvalidId
 
 from ..extensions import mongo
 from ..utils.id_generator import (
@@ -193,6 +193,8 @@ class MemberService:
             "admitting_officer": created_by,
             "photo_url": None,
             "signature_url": None,
+            "portal_enabled": False,
+            "portal_activated_at": None,
             "created_at": now,
             "updated_at": now,
         }
@@ -248,7 +250,7 @@ class MemberService:
         if isinstance(dob, date) and not isinstance(dob, datetime):
             cleaned["date_of_birth"] = datetime.combine(dob, datetime.min.time())
 
-        cleaned["updated_at"] = utcnow(),
+        cleaned["updated_at"] = utcnow()
 
         self.db.members.update_one({"member_id": member_id}, {"$set": cleaned})
 
@@ -321,7 +323,7 @@ class MemberService:
         return " ".join(p for p in parts if p).strip()
 
     def _provision_savings_account(self, member_id: str, member_name: str) -> None:
-        now = utcnow(),
+        now = utcnow()
         self.db.savings_accounts.insert_one(
             {
                 "account_id": generate_account_id(self.db),
@@ -343,7 +345,7 @@ class MemberService:
         )
 
     def _provision_share_capital(self, member_id: str, member_name: str) -> None:
-        now = utcnow(),
+        now = utcnow()
         self.db.share_capital.insert_one(
             {
                 "share_id": generate_share_id(self.db),
@@ -398,7 +400,7 @@ class MemberService:
             {
                 "$set": {
                     "status": "Inactive",
-                    "updated_at": utcnow(),
+                    "updated_at": utcnow()
                 }
             },
         )
