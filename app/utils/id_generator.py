@@ -83,3 +83,8 @@ def generate_share_payment_id(db) -> str:
 def generate_dividend_id(db, fiscal_year: int) -> str:
     seq = _next_sequence(db, f"dividend_id:{fiscal_year}")
     return f"DIV-{fiscal_year}-{str(seq).zfill(4)}"
+
+def generate_loan_application_id(db) -> str:
+    year = _year()
+    seq = _next_sequence(db, f"loan_application_id:{year}")
+    return f"LA-{year}-{str(seq).zfill(4)}"

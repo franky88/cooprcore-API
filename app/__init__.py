@@ -37,6 +37,7 @@ def create_app(env: str | None = None) -> Flask:
     from .blueprints.admin import admin_bp
     from .blueprints.member_portal import member_portal_bp
     from .blueprints.member_auth import member_auth_bp
+    from .blueprints.member_loan_applications import member_loan_applications_bp
 
     app.register_blueprint(auth_bp, url_prefix=f"{api}/auth")
     app.register_blueprint(users_bp, url_prefix=f"{api}/users")
@@ -47,6 +48,7 @@ def create_app(env: str | None = None) -> Flask:
     app.register_blueprint(admin_bp, url_prefix=f"{api}/admin")
     app.register_blueprint(member_portal_bp, url_prefix=f"{api}/member-portal")
     app.register_blueprint(member_auth_bp, url_prefix=f"{api}/member-auth")
+    app.register_blueprint(member_loan_applications_bp, url_prefix=f"{api}/member-portal")
 
     # ------------------------------------------------------------------ #
     # Scheduler (background jobs)
