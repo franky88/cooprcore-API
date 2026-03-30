@@ -4,9 +4,19 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from ..services.loan_service import LoanService
 from ..middleware.auth_middleware import roles_required
+from ..services.loan_application_service import LoanApplicationService
+from ..schemas.loan_application_review_schema import (
+    LoanApplicationApproveSchema,
+    LoanApplicationRejectSchema,
+    LoanApplicationReviewSchema,
+)
 
 loans_bp = Blueprint("loans", __name__)
 service = LoanService()
+loan_application_service = LoanApplicationService()
+approve_schema = LoanApplicationApproveSchema()
+reject_schema = LoanApplicationRejectSchema()
+review_schema = LoanApplicationReviewSchema()
 
 
 @loans_bp.get("/")
@@ -169,3 +179,69 @@ def post_payment(loan_id: str):
     if "error" in result:
         return jsonify(result), 400
     return jsonify(result), 201
+
+@loans_bp.get("/applications")
+@jwt_required()
+@roles_required("super_admin", "branch_manager", "loan_officer")
+def list_loan_applications():
+    page = int(request.args.get("page", 1))
+    per_page = int(request.args.get("per_page", 20))
+    status = request.args.get("status")
+    search = request.args.get("search")
+
+    result = loan_application_service.list_applications(
+        page=page,
+        per_page=per_page,
+        status=status,
+        search=search,
+    )
+    return jsonify(result), 200
+
+
+@loans_bp.get("/applications/<application_id>")
+@jwt_required()
+@roles_required("super_admin", "branch_manager", "loan_officer")
+def get_loan_application(application_id: str):
+    result = loan_application_service.get_application_by_id(application_id)
+    if not result:
+        return jsonify({"error": "Loan application not found."}), 404
+    return jsonify({"data": result}), 200
+
+
+@loans_bp.put("/applications/<application_id>/review")
+@jwt_required()
+@roles_required("super_admin", "branch_manager", "loan_officer")
+def review_loan_application(application_id: str):
+    payload = review_schema.load(request.get_json() or {})
+    result, status = loan_application_service.review_application(
+        application_id=application_id,
+        reviewer_user_id=get_jwt_identity(),
+        payload=payload,
+    )
+    return jsonify(result), status
+
+
+@loans_bp.put("/applications/<application_id>/reject")
+@jwt_required()
+@roles_required("super_admin", "branch_manager", "loan_officer")
+def reject_loan_application(application_id: str):
+    payload = reject_schema.load(request.get_json() or {})
+    result, status = loan_application_service.reject_application(
+        application_id=application_id,
+        reviewer_user_id=get_jwt_identity(),
+        payload=payload,
+    )
+    return jsonify(result), status
+
+
+@loans_bp.put("/applications/<application_id>/approve")
+@jwt_required()
+@roles_required("super_admin", "branch_manager", "loan_officer")
+def approve_loan_application(application_id: str):
+    payload = approve_schema.load(request.get_json() or {})
+    result, status = loan_application_service.approve_application(
+        application_id=application_id,
+        reviewer_user_id=get_jwt_identity(),
+        payload=payload,
+    )
+    return jsonify(result), status
