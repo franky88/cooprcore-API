@@ -35,11 +35,6 @@ class MemberAuthService:
         email = payload["email"].strip().lower()
         date_of_birth = payload["date_of_birth"]
 
-        try:
-            input_dob = datetime.fromisoformat(date_of_birth).date()
-        except Exception:
-            return {"error": "Invalid date format. Use YYYY-MM-DD."}
-
         member = self.db.members.find_one(
             {"member_id": member_id},
             {
@@ -64,7 +59,7 @@ class MemberAuthService:
             return {"error": "Only active members can activate portal access."}
 
         stored_dob = member.get("date_of_birth")
-        if not self._dates_match(stored_dob, input_dob):
+        if not self._dates_match(stored_dob, date_of_birth):
             return {"error": "Date of birth does not match our member records."}
 
         existing_user = self.db.users.find_one(
