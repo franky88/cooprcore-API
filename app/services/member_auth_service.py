@@ -35,6 +35,11 @@ class MemberAuthService:
         email = payload["email"].strip().lower()
         date_of_birth = payload["date_of_birth"]
 
+        try:
+            input_dob = datetime.fromisoformat(date_of_birth).date()
+        except Exception:
+            return {"error": "Invalid date format. Use YYYY-MM-DD."}
+
         member = self.db.members.find_one(
             {"member_id": member_id},
             {
@@ -59,7 +64,7 @@ class MemberAuthService:
             return {"error": "Only active members can activate portal access."}
 
         stored_dob = member.get("date_of_birth")
-        if not self._dates_match(stored_dob, date_of_birth):
+        if not self._dates_match(stored_dob, input_dob):
             return {"error": "Date of birth does not match our member records."}
 
         existing_user = self.db.users.find_one(
@@ -91,16 +96,20 @@ class MemberAuthService:
             return_document=ReturnDocument.AFTER,
         )
 
-        send_email(
-            to_email=email,
-            subject="Your CoopCore Portal Activation Code",
-            body=(
-                f"Hello {member.get('first_name', 'Member')},\n\n"
-                f"Your CoopCore portal activation code is: {otp}\n\n"
-                f"This code expires in {self.OTP_EXPIRY_MINUTES} minutes.\n"
-                f"If you did not request this, please ignore this email."
-            ),
-        )
+        try:
+            send_email(
+                to_email=email,
+                subject="Your CoopCore Portal Activation Code",
+                body=(
+                    f"Hello {member.get('first_name', 'Member')},\n\n"
+                    f"Your CoopCore portal activation code is: {otp}\n\n"
+                    f"This code expires in {self.OTP_EXPIRY_MINUTES} minutes.\n"
+                    f"If you did not request this, please ignore this email."
+                ),
+            )
+        except Exception as e:
+            print("EMAIL ERROR:", str(e))
+            return {"error": "Failed to send activation email."}
 
         return {
             "data": {
